@@ -1,8 +1,8 @@
 /* ==========================================
-   CORE.JS - ACTION-ONLY RESET EDITION (v16.4)
+   CORE.JS - ULTIMATE SNIPER (v16.7)
    ========================================== */
 
-console.log("%c[Ciko-Core] 🛡️ Sistem Zırhlandı. Sadece aksiyon anında reset atılacak.", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 🚀 Sürüm 16.7 Aktif! Açıkgöz Sniper pusuda.", "color: #00ff41; font-weight: bold;");
 
 // --- Global Durum ---
 let timerInterval = null;
@@ -38,7 +38,8 @@ function buildUI() {
     const selectors = [
         '.flex.items-center.gap-4 .flex.items-center.gap-2.relative',
         '.flex.items-center.gap-3.relative',
-        'header .flex.items-center.gap-4'
+        'header .flex.items-center.gap-4',
+        '[class*="header"] .flex.items-center'
     ];
 
     let target = null;
@@ -49,7 +50,6 @@ function buildUI() {
 
     if (!target) return;
 
-    // Override: Eğer zaten varsa sil ve tazesini yap (Yeni veri gelmiş olabilir)
     const existing = document.getElementById('cyber-timer-wrapper');
     if (existing) existing.remove();
 
@@ -120,34 +120,36 @@ function buildUI() {
     runTimerEngine();
 }
 
-// --- Network Sniper ---
+// --- Network Sniper (FULL AGGRESSIVE) ---
 const processResponse = (url, data, status) => {
+    // 400 ve üstünü geç
     if (status !== 200) return;
+
+    // Filtreleri tamamen kaldırdık, sadece dataya odaklanıyoruz.
+    const threshold = deepSearch(data, 'auto_resolve_threshold');
     
-    const foundUser = deepSearch(data, 'username');
-    if (foundUser) window.currentReviewer = foundUser;
-    
-    if (window.currentReviewer && url.includes(window.currentReviewer)) {
-        const threshold = deepSearch(data, 'auto_resolve_threshold');
-        if (threshold) {
-            console.log(`%c[Ciko-Sniper] 🎯 Veri Güncellendi: ${threshold}s`, "color: #fff000; font-weight: bold;");
-            const now = Date.now();
-            const endTime = now + (parseInt(threshold) * 1000);
-            
-            // Hafızayı her zaman güncelle
-            localStorage.setItem('ciko_timer_end', endTime);
-            localStorage.setItem('ciko_last_url', window.location.href);
-            
-            audioPlayedFinal = false; 
-            buildUI(); 
-        }
+    if (threshold) {
+        console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Süre: ${threshold}s`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
+        console.log(`[Ciko-Sniper] Kaynak URL: ${url}`);
+        
+        const now = Date.now();
+        const endTime = now + (parseInt(threshold) * 1000);
+        
+        localStorage.setItem('ciko_timer_end', endTime);
+        localStorage.setItem('ciko_last_url', window.location.href);
+        
+        audioPlayedFinal = false; 
+        buildUI(); 
     }
 };
 
 const originalOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(m, u) {
     this.addEventListener('load', function() {
-        try { processResponse(u, JSON.parse(this.responseText), this.status); } catch (e) {}
+        try { 
+            const resp = JSON.parse(this.responseText);
+            processResponse(u, resp, this.status); 
+        } catch (e) {}
     });
     return originalOpen.apply(this, arguments);
 };
@@ -194,17 +196,16 @@ function runTimerEngine() {
 
 // --- Reset Fonksiyonu ---
 function systemReset() {
-    console.log("%c[Ciko-System] 🧹 Manuel Reset! Cache temizlendi.", "color: #ff003c; font-weight: bold;");
+    console.log("%c[Ciko-System] 🧹 Manuel Reset!", "color: #ff003c; font-weight: bold;");
     localStorage.removeItem('ciko_timer_end');
     localStorage.removeItem('ciko_last_url');
     const existing = document.getElementById('cyber-timer-wrapper');
     if (existing) existing.remove();
     audioPlayedFinal = false;
-    window.currentReviewer = null; 
     if (timerInterval) clearInterval(timerInterval);
 }
 
-// --- 🔥 Click Listener: Sadece Butonlara Basınca Sıfırla ---
+// Click Listener
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.magnet-button');
     if (btn) {
@@ -215,7 +216,7 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
-// UI Bekçisi: Hafızada veri varsa (yükleme sonrası vs.) UI'ı basar
+// UI Bekçisi
 setInterval(() => {
     if (localStorage.getItem('ciko_timer_end')) {
         buildUI();
