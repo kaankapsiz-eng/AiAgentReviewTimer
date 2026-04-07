@@ -1,16 +1,16 @@
 /* ==========================================
-   CORE.JS - ID WATCHER & ACTION RESET (v16.0)
+   CORE.JS - AUTO-RESET & SNIPER RELOAD (v16.1)
    ========================================== */
 
-console.log("%c[Ciko-Core] 🎯 Gözetleme Kulesi ve Sniper Aktif.", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 🛡️ Sistem Zırhlandı ve Sniper Pusuda.", "color: #00ff41; font-weight: bold;");
 
-// Değişkenler
-let currentUrl = window.location.href; // URL takibi için başlangıç noktası
+// --- Global Durum Değişkenleri ---
+let currentUrl = window.location.href;
 let timerInterval = null;
 let isMutedGlobal = localStorage.getItem('cyberTimerMuted') === 'true';
 let userLibraryPref = localStorage.getItem('ciko_lib_pref') || 'ALL'; 
 let currentThemeColor = '#00ff41';
-let audioPlayedFinal = false;
+let audioPlayedFinal = false; // Her yeni ID'de tekrar çalabilmesi için önemli
 let currentAudio = new Audio();
 currentAudio.volume = 0.2;
 
@@ -50,7 +50,7 @@ function buildUI() {
 
     if (!target) return;
 
-    // Override koruması: Eğer zaten varsa sil ve baştan yap (yeni ID gelmiş olabilir)
+    // Eğer zaten varsa temizle (Yeni ID için taze UI)
     const existing = document.getElementById('cyber-timer-wrapper');
     if (existing) existing.remove();
 
@@ -124,32 +124,37 @@ function buildUI() {
 
 // --- Network Sniper ---
 const processResponse = (url, data, status) => {
+    // Sadece 200 dönenleri al
     if (status !== 200) return;
     
     const foundUser = deepSearch(data, 'username');
     if (foundUser) window.currentReviewer = foundUser;
     
-    // Cache varsa bile ID değişince buildUI tekrar tetiklenecek, Sniper sadece veri yakalar
+    // URL kontrolü ve threshold yakalama
     if (window.currentReviewer && url.includes(window.currentReviewer)) {
         const threshold = deepSearch(data, 'auto_resolve_threshold');
         if (threshold) {
-            console.log(`%c[Ciko-Sniper] 🎯 Veri Güncellendi: ${threshold}s`, "color: #fff000; font-weight: bold;");
+            console.log(`%c[Ciko-Sniper] 🎯 YENİ HEDEF KİLİTLENDİ: ${threshold}s`, "background: #00ff41; color: #000; padding: 5px; font-weight: bold;");
+            
             const now = Date.now();
             const endTime = now + (parseInt(threshold) * 1000);
+            
             localStorage.setItem('ciko_timer_end', endTime);
             localStorage.setItem('ciko_last_url', window.location.href);
-            audioPlayedFinal = false; // Ses için izni tazele
+            
+            // Yeni ID gelince ses iznini sıfırla
+            audioPlayedFinal = false; 
+            
             buildUI(); 
         }
     }
 };
 
+// --- İnterseptörler (Global kaldığı için dokunmuyoruz, sadece veriyi işlerler) ---
 const originalOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(m, u) {
     this.addEventListener('load', function() {
-        try { 
-            processResponse(u, JSON.parse(this.responseText), this.status); 
-        } catch (e) {}
+        try { processResponse(u, JSON.parse(this.responseText), this.status); } catch (e) {}
     });
     return originalOpen.apply(this, arguments);
 };
@@ -162,7 +167,7 @@ window.fetch = async (...args) => {
     return response;
 };
 
-// --- Timer Engine ---
+// --- Timer Motoru ---
 function runTimerEngine() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
@@ -194,40 +199,47 @@ function runTimerEngine() {
     }, 1000);
 }
 
-// --- 🔥 1. URL Observer: ID veya ResourceId Değişince Sıfırla ---
+// --- 🔥 URL Observer: ID/Review Değişimini Yakalar ve Sniper'ı Resetler ---
+function systemReset() {
+    console.log("%c[Ciko-System] 🔄 URL Değişti! Tüm sistem resetleniyor...", "color: #ff00ff; font-weight: bold;");
+    
+    // 1. Cache Temizliği
+    localStorage.removeItem('ciko_timer_end');
+    localStorage.removeItem('ciko_last_url');
+    
+    // 2. UI Temizliği
+    const existing = document.getElementById('cyber-timer-wrapper');
+    if (existing) existing.remove();
+    
+    // 3. Değişken Resetleri
+    audioPlayedFinal = false;
+    window.currentReviewer = null; 
+    
+    if (timerInterval) clearInterval(timerInterval);
+    
+    console.log("%c[Ciko-System] 🎯 Sniper yeni hedefler için kuruldu.", "color: #00ff41;");
+}
+
 setInterval(() => {
     if (window.location.href !== currentUrl) {
-        console.log("%c[Ciko-URL] 🔄 Link Değişti! Cache temizleniyor ve Sniper tekrar kuruluyor.", "color: #ff00ff; font-weight: bold;");
         currentUrl = window.location.href;
-        
-        // Temizlik operasyonu
-        localStorage.removeItem('ciko_timer_end');
-        localStorage.removeItem('ciko_last_url');
-        const existing = document.getElementById('cyber-timer-wrapper');
-        if (existing) existing.remove();
-        
-        // Sniper'ın tekrar veri araması için sessizce bekle (Network sniper zaten dinlemede)
+        systemReset();
     }
 }, 500);
 
-// --- 🔥 2. Click Listener: Butonlara Basınca Sıfırla ---
+// --- 🔥 Buton Click Listener: Manuel Temizlik ---
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.magnet-button');
     if (btn) {
         const btnText = btn.innerText.toLowerCase();
         if (btnText.includes('enter review') || btnText.includes('cancel assignment')) {
-            console.log("%c[Ciko-Action] 🖱️ Kritik butona basıldı! Cache temizleniyor.", "color: #ff003c; font-weight: bold;");
-            
-            localStorage.removeItem('ciko_timer_end');
-            localStorage.removeItem('ciko_last_url');
-            
-            const existing = document.getElementById('cyber-timer-wrapper');
-            if (existing) existing.remove();
+            console.log("%c[Ciko-Action] 🖱️ Butona basıldı, sistem sıfırlanıyor.", "color: #ff003c;");
+            systemReset();
         }
     }
-}, true); // 'true' kullanarak event'i erkenden yakalıyoruz
+}, true);
 
-// --- UI Bekçisi ---
+// --- UI Bekçisi: Veri gelince UI'ı basar ---
 setInterval(() => {
     if (localStorage.getItem('ciko_timer_end')) {
         buildUI();
