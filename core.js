@@ -1,8 +1,8 @@
 /* ==========================================
-   CORE.JS - OMNISCIENT SNIPER (v16.8)
+   CORE.JS - STABILIZED UI EDITION (v16.9)
    ========================================== */
 
-console.log("%c[Ciko-Core] 👁️ Sürüm 16.8: Her Şeyi Gören Göz Aktif!", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 🚀 Sürüm 16.9 Aktif! Stabilite modu devrede.", "color: #00ff41; font-weight: bold;");
 
 // --- Global Durum ---
 let timerInterval = null;
@@ -33,13 +33,19 @@ function format(ms) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// --- UI Engine ---
+// --- UI Engine (MODİFİYE EDİLDİ) ---
 function buildUI() {
+    // 1. Zaten varsa çık! (Resimlerin değişmesini ve sıfırlanmayı engeller)
+    if (document.getElementById('cyber-timer-wrapper')) {
+        return; 
+    }
+
     const selectors = [
         '.flex.items-center.gap-4 .flex.items-center.gap-2.relative',
         '.flex.items-center.gap-3.relative',
         'header .flex.items-center.gap-4',
-        '[class*="Header"] [class*="Container"]'
+        '[class*="Header"] [class*="Container"]',
+        '.flex.items-center.gap-2.relative'
     ];
 
     let target = null;
@@ -50,8 +56,7 @@ function buildUI() {
 
     if (!target) return;
 
-    const existing = document.getElementById('cyber-timer-wrapper');
-    if (existing) existing.remove();
+    console.log("%c[Ciko-UI] ✅ Target bulundu, inşa ediliyor...", "color: #00ff41;");
 
     let selected = (userLibraryPref === 'PODO') 
         ? { url: PODO_IMG, color: '#007bff' } 
@@ -59,6 +64,7 @@ function buildUI() {
     
     currentThemeColor = selected.color;
 
+    // Style
     if (!document.getElementById('cyber-style')) {
         const s = document.createElement('style');
         s.id = 'cyber-style';
@@ -75,6 +81,10 @@ function buildUI() {
             #stop-sound-ani { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); background: #ff003c; color: #fff; border: none; font-size: 10px; padding: 2px 8px; cursor: pointer; display: none; border-radius: 2px; font-weight: bold; }
             #lib-switcher { width: 70px; background: #000; color: ${currentThemeColor}; font-size: 9px; text-align: center; cursor: pointer; border: 1px solid ${currentThemeColor}; border-top: none; padding: 1px 0; opacity: 0.7; transition: 0.3s; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; margin-left: 5px; }
             #lib-switcher:hover { opacity: 1; background: #111; text-shadow: 0 0 5px ${currentThemeColor}; }
+            .critical #cyber-timer-box, .critical #lib-switcher { border-color: #ff003c !important; }
+            .critical #timer-num { color: #ff003c !important; }
+            .critical #timer-img { border-color: #ff003c !important; }
+            .critical #lib-switcher { color: #ff003c !important; }
         `;
         document.head.appendChild(s);
     }
@@ -97,6 +107,7 @@ function buildUI() {
     
     target.parentNode.insertBefore(wrapper, target);
 
+    // Click Events
     document.getElementById('cyber-mute-btn').onclick = () => {
         isMutedGlobal = !isMutedGlobal;
         localStorage.setItem('cyberTimerMuted', isMutedGlobal);
@@ -113,26 +124,18 @@ function buildUI() {
     };
 
     if (isMutedGlobal) document.getElementById('cyber-mute-btn').classList.add('muted');
+    
+    // Motoru başlat
     runTimerEngine();
 }
 
-// --- Network Sniper (OMNISCIENT MODE) ---
+// --- Network Sniper ---
 const processResponse = (url, data, status) => {
     if (status !== 200) return;
-
-    // Jotform'un muhtemel anahtar kelimelerini içeren her şeye bakıyoruz
-    const thresholdKeys = ['auto_resolve_threshold', 'threshold', 'review_timer', 'timer_limit'];
-    let foundValue = null;
-
-    for (let key of thresholdKeys) {
-        foundValue = deepSearch(data, key);
-        if (foundValue) {
-            console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Anahtar: ${key} | Değer: ${foundValue}`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
-            break;
-        }
-    }
+    const foundValue = deepSearch(data, 'auto_resolve_threshold');
     
     if (foundValue) {
+        console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Değer: ${foundValue}`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
         const now = Date.now();
         const endTime = now + (parseInt(foundValue) * 1000);
         localStorage.setItem('ciko_timer_end', endTime);
@@ -171,14 +174,19 @@ function runTimerEngine() {
 
         const remaining = endTime - Date.now();
         const display = document.getElementById('timer-num');
-        if (display) display.innerText = format(remaining);
+        
+        // Sadece rakamı güncelle, DOM'u değil!
+        if (display) {
+            display.innerText = format(remaining);
+        }
 
         if (remaining <= 10000 && remaining > 0 && !audioPlayedFinal) {
             if (!isMutedGlobal) {
                 const s = SOUND_LIBRARY[Math.floor(Math.random() * SOUND_LIBRARY.length)];
                 currentAudio.src = s.url;
                 currentAudio.play().catch(() => {});
-                document.getElementById('stop-sound-ani').style.display = 'block';
+                const muteBtn = document.getElementById('stop-sound-ani');
+                if(muteBtn) muteBtn.style.display = 'block';
             }
             audioPlayedFinal = true;
             const wrapper = document.getElementById('cyber-timer-wrapper');
@@ -186,16 +194,17 @@ function runTimerEngine() {
         }
 
         if (remaining <= 0) {
-            clearInterval(timerInterval);
             if (display) display.innerText = "DONE";
             const wrapper = document.getElementById('cyber-timer-wrapper');
             if (wrapper) wrapper.classList.remove('critical');
+            // Done olunca interval'ı temizlemiyoruz ki yeni veri gelirse tekrar başlasın
         }
     }, 1000);
 }
 
 // Reset
 function systemReset() {
+    console.log("%c[Ciko-System] 🧹 Reset atılıyor...", "color: #ff003c;");
     localStorage.removeItem('ciko_timer_end');
     localStorage.removeItem('ciko_last_url');
     const existing = document.getElementById('cyber-timer-wrapper');
@@ -214,6 +223,9 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
+// UI Bekçisi - Sadece UI yoksa basar
 setInterval(() => {
-    if (localStorage.getItem('ciko_timer_end')) buildUI();
+    if (localStorage.getItem('ciko_timer_end') && !document.getElementById('cyber-timer-wrapper')) {
+        buildUI();
+    }
 }, 1000);
