@@ -1,3 +1,4 @@
+// core.js
 let currentUrl = window.location.href;
 let timerInterval = null;
 let isMutedGlobal = localStorage.getItem('cyberTimerMuted') === 'true';
@@ -7,6 +8,7 @@ let audioPlayedFinal = false;
 let currentAudio = new Audio();
 currentAudio.volume = 0.2;
 
+// --- Helpers ---
 function deepSearch(obj, key) {
     if (obj && typeof obj === 'object') {
         if (obj.hasOwnProperty(key)) return obj[key];
@@ -26,10 +28,16 @@ function format(ms) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// --- UI Engine ---
 function buildUI() {
+    // Eğer zaten varsa veya target yoksa çık
     if (document.getElementById('cyber-timer-wrapper')) return;
+    
+    // Jotform'un o meşhur butonu/alanı
     const target = document.querySelector('.flex.items-center.gap-4 .flex.items-center.gap-2.relative');
-    if (!target) return;
+    if (!target) return; // Henüz render edilmemiş, sonraki denemeyi bekle.
+
+    console.log("%c[Ciko-Core] UI Target bulundu, inşa başlıyor...", "color: #00ff41;");
 
     let selected = (userLibraryPref === 'PODO') 
         ? { url: PODO_IMG, color: '#007bff' } 
@@ -95,6 +103,7 @@ function buildUI() {
     runTimerEngine();
 }
 
+// --- Logic & Network Sniper ---
 const processResponse = (url, data, status) => {
     if (status !== 200 || localStorage.getItem('ciko_timer_end')) return;
     const foundUser = deepSearch(data, 'username');
@@ -163,5 +172,10 @@ function runTimerEngine() {
     }, 1000);
 }
 
-// Bootstrapper
-if (localStorage.getItem('ciko_timer_end')) buildUI();
+// --- Persistence Bekçisi ---
+// Sayfa yüklendiğinde hafızada süre varsa UI'ı basmak için saniyede bir dener
+setInterval(() => {
+    if (localStorage.getItem('ciko_timer_end') && !document.getElementById('cyber-timer-wrapper')) {
+        buildUI();
+    }
+}, 1000);
