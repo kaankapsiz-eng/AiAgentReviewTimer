@@ -1,3 +1,4 @@
+console.log("%c[Ciko-Assets] Yükleme başladı...", "color: #ff00ff; font-weight: bold;");
 const COLOR_OBIWAN = '#c19a6b';
 const COLOR_PAPOI = '#fff000';
 const PODO_IMG = 'https://cdn.jotfor.ms/assets/img/ai-agent/podoAvatars/podo-with-yarn.png';
@@ -22,3 +23,4 @@ const SOUND_LIBRARY = [
     { name: 'NE DIYOO', url: 'https://www.myinstants.com/media/sounds/ne-diyooo-oglum.mp3' },
     { name: 'HARAMBALL', url: 'https://www.myinstants.com/media/sounds/haramball_ZFfRyh2.mp3' }
 ];
+console.log("%c[Ciko-Assets] Kütüphaneler tanımlandı.", "color: #ff00ff;");
