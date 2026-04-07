@@ -1,11 +1,10 @@
 /* ==========================================
-   CORE.JS - SMART ID WATCHER (v16.2)
+   CORE.JS - ACTION-ONLY RESET EDITION (v16.4)
    ========================================== */
 
-console.log("%c[Ciko-Core] 🛡️ Akıllı Sniper ve ID Takipçisi Devrede.", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 🛡️ Sistem Zırhlandı. Sadece aksiyon anında reset atılacak.", "color: #00ff41; font-weight: bold;");
 
 // --- Global Durum ---
-let lastKnownId = extractReviewId(window.location.href); 
 let timerInterval = null;
 let isMutedGlobal = localStorage.getItem('cyberTimerMuted') === 'true';
 let userLibraryPref = localStorage.getItem('ciko_lib_pref') || 'ALL'; 
@@ -15,19 +14,6 @@ let currentAudio = new Audio();
 currentAudio.volume = 0.2;
 
 // --- Helpers ---
-function extractReviewId(url) {
-    try {
-        // Linkteki o uzun ID'yi ve resourceId'yi çekip birleştiriyoruz (Unique Key)
-        const parts = url.split('/');
-        const idPart = parts[parts.length - 1].split('?')[0];
-        const params = new URLSearchParams(window.location.search);
-        const resId = params.get('resourceId') || "";
-        return `${idPart}-${resId}`;
-    } catch (e) {
-        return url;
-    }
-}
-
 function deepSearch(obj, key) {
     if (obj && typeof obj === 'object') {
         if (obj.hasOwnProperty(key)) return obj[key];
@@ -63,6 +49,7 @@ function buildUI() {
 
     if (!target) return;
 
+    // Override: Eğer zaten varsa sil ve tazesini yap (Yeni veri gelmiş olabilir)
     const existing = document.getElementById('cyber-timer-wrapper');
     if (existing) existing.remove();
 
@@ -146,8 +133,11 @@ const processResponse = (url, data, status) => {
             console.log(`%c[Ciko-Sniper] 🎯 Veri Güncellendi: ${threshold}s`, "color: #fff000; font-weight: bold;");
             const now = Date.now();
             const endTime = now + (parseInt(threshold) * 1000);
+            
+            // Hafızayı her zaman güncelle
             localStorage.setItem('ciko_timer_end', endTime);
             localStorage.setItem('ciko_last_url', window.location.href);
+            
             audioPlayedFinal = false; 
             buildUI(); 
         }
@@ -202,9 +192,9 @@ function runTimerEngine() {
     }, 1000);
 }
 
-// --- 🔥 SMART RESET: Sadece Review ID Değişirse Reset At ---
+// --- Reset Fonksiyonu ---
 function systemReset() {
-    console.log("%c[Ciko-System] 🔄 Kritik ID Değişimi Tespit Edildi! Resetleniyor...", "color: #ff00ff; font-weight: bold;");
+    console.log("%c[Ciko-System] 🧹 Manuel Reset! Cache temizlendi.", "color: #ff003c; font-weight: bold;");
     localStorage.removeItem('ciko_timer_end');
     localStorage.removeItem('ciko_last_url');
     const existing = document.getElementById('cyber-timer-wrapper');
@@ -214,15 +204,7 @@ function systemReset() {
     if (timerInterval) clearInterval(timerInterval);
 }
 
-setInterval(() => {
-    const currentId = extractReviewId(window.location.href);
-    if (currentId !== lastKnownId) {
-        lastKnownId = currentId;
-        systemReset();
-    }
-}, 1000); // 1 saniyede bir ID kontrolü yeterli
-
-// --- Buton Click Listener ---
+// --- 🔥 Click Listener: Sadece Butonlara Basınca Sıfırla ---
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.magnet-button');
     if (btn) {
@@ -233,7 +215,7 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
-// UI Bekçisi
+// UI Bekçisi: Hafızada veri varsa (yükleme sonrası vs.) UI'ı basar
 setInterval(() => {
     if (localStorage.getItem('ciko_timer_end')) {
         buildUI();
