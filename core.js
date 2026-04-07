@@ -1,8 +1,8 @@
 /* ==========================================
-   CORE.JS - LOGIC & UI ENGINE (DEBUG EDITION)
+   CORE.JS - DYNAMIC SNIPER EDITION (v15.0)
    ========================================== */
 
-console.log("%c[Ciko-Core] 🔋 Motor ateşlendi, sistem kontrol ediliyor...", "color: #00ff41; font-weight: bold; font-size: 12px;");
+console.log("%c[Ciko-Core] 🏹 Sniper her isteği gözetliyor...", "color: #00ff41; font-weight: bold;");
 
 // Değişkenler
 let timerInterval = null;
@@ -12,13 +12,6 @@ let currentThemeColor = '#00ff41';
 let audioPlayedFinal = false;
 let currentAudio = new Audio();
 currentAudio.volume = 0.2;
-
-// --- Assets Kontrolü ---
-if (typeof IMAGE_LIBRARY === 'undefined') {
-    console.error("%c[Ciko-Core] ❌ KRİTİK HATA: assets.js verileri bulunamadı! main.js sıralaması yanlış olabilir.", "color: #ff003c; font-weight: bold;");
-} else {
-    console.log("%c[Ciko-Core] ✅ Assets kütüphanesi hazır.", "color: #00ff41;");
-}
 
 // --- Helpers ---
 function deepSearch(obj, key) {
@@ -42,12 +35,7 @@ function format(ms) {
 
 // --- UI Engine ---
 function buildUI() {
-    // 1. Zaten var mı kontrolü
-    if (document.getElementById('cyber-timer-wrapper')) {
-        return; 
-    }
-
-    // 2. Target Arama (Jotform'un React yapısı için çoklu selector)
+    // Target Arama
     const selectors = [
         '.flex.items-center.gap-4 .flex.items-center.gap-2.relative',
         '.flex.items-center.gap-3.relative',
@@ -57,26 +45,25 @@ function buildUI() {
     let target = null;
     for (const sel of selectors) {
         target = document.querySelector(sel);
-        if (target) {
-            console.log(`%c[Ciko-UI] ✅ Target bulundu (${sel}). İnşa başlıyor...`, "color: #00ff41;");
-            break;
-        }
+        if (target) break;
     }
 
-    if (!target) {
-        // Log kirliliği yapmaması için sessizce bekler, ama debug için:
-        // console.warn("[Ciko-UI] Target henüz yok, React bekleniyor...");
-        return;
+    if (!target) return;
+
+    // Eğer zaten varsa silip baştan yapalım (Override durumunda UI yenilensin)
+    const existing = document.getElementById('cyber-timer-wrapper');
+    if (existing) {
+        // Sadece image ve color değişmiş olabilir, baştan kurmak en temizi
+        existing.remove(); 
     }
 
-    // 3. Asset Seçimi
     let selected = (userLibraryPref === 'PODO') 
         ? { url: PODO_IMG, color: '#007bff' } 
         : IMAGE_LIBRARY[Math.floor(Math.random() * IMAGE_LIBRARY.length)];
     
     currentThemeColor = selected.color;
 
-    // 4. Style Enjeksiyonu
+    // Style (Eğer yoksa)
     if (!document.getElementById('cyber-style')) {
         const s = document.createElement('style');
         s.id = 'cyber-style';
@@ -101,7 +88,6 @@ function buildUI() {
         document.head.appendChild(s);
     }
 
-    // 5. DOM Enjeksiyonu
     const wrapper = document.createElement('div');
     wrapper.id = 'cyber-timer-wrapper';
     wrapper.innerHTML = `
@@ -119,9 +105,7 @@ function buildUI() {
     `;
     
     target.parentNode.insertBefore(wrapper, target);
-    console.log("%c[Ciko-UI] DOM Enjeksiyonu BAŞARILI.", "color: #00ff41; font-weight: bold;");
 
-    // Click Events
     document.getElementById('cyber-mute-btn').onclick = () => {
         isMutedGlobal = !isMutedGlobal;
         localStorage.setItem('cyberTimerMuted', isMutedGlobal);
@@ -141,27 +125,42 @@ function buildUI() {
     runTimerEngine();
 }
 
-// --- Logic & Network Sniper ---
+// --- Logic & Network Sniper (GÜNCELLENDİ) ---
 const processResponse = (url, data, status) => {
-    if (status !== 200 || localStorage.getItem('ciko_timer_end')) return;
+    // 1. Kural: 400 response'ları asla kaydetme
+    if (status !== 200) {
+        console.warn(`[Ciko-Sniper] ⚠️ Geçersiz response (${status}) görmezden gelindi.`);
+        return;
+    }
     
     const foundUser = deepSearch(data, 'username');
-    if (foundUser) window.currentReviewer = foundUser;
+    if (foundUser) {
+        window.currentReviewer = foundUser;
+        console.log(`[Ciko-Sniper] 🔎 Username tespit edildi: ${foundUser}`);
+    }
     
+    // 2. Kural: Username her geldiğinde tekrar bak (Override Modu)
     if (window.currentReviewer && url.includes(window.currentReviewer)) {
         const threshold = deepSearch(data, 'auto_resolve_threshold');
+        
         if (threshold) {
-            console.log("%c[Ciko-Sniper] 🎯 HEDEF YAKALANDI! Süre: " + threshold, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
+            console.log(`%c[Ciko-Sniper] 🎯 Yeni veri yakalandı! Süre: ${threshold}s`, "background: #007bff; color: #fff; padding: 4px;");
+            
             const now = Date.now();
             const endTime = now + (parseInt(threshold) * 1000);
+            
+            // Veriyi her halükarda güncelle (Üstüne yaz)
             localStorage.setItem('ciko_timer_end', endTime);
             localStorage.setItem('ciko_last_url', window.location.href);
+            
+            // Ses durumunu resetle (yeni süre geldiyse 10sn alarmı tekrar çalışabilsin)
+            audioPlayedFinal = false; 
+            
             buildUI(); 
         }
     }
 };
 
-// XMLHttpRequest Interceptor
 const originalOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(m, u) {
     this.addEventListener('load', function() {
@@ -173,7 +172,6 @@ XMLHttpRequest.prototype.open = function(m, u) {
     return originalOpen.apply(this, arguments);
 };
 
-// Fetch Interceptor
 const originalFetch = window.fetch;
 window.fetch = async (...args) => {
     const response = await originalFetch(...args);
@@ -188,7 +186,6 @@ function runTimerEngine() {
     timerInterval = setInterval(() => {
         const lastUrl = localStorage.getItem('ciko_last_url');
         if (lastUrl && window.location.href !== lastUrl) {
-            console.log("[Ciko-Engine] URL değişti, sayaç imha ediliyor.");
             localStorage.removeItem('ciko_timer_end');
             localStorage.removeItem('ciko_last_url');
             location.reload();
@@ -202,13 +199,11 @@ function runTimerEngine() {
         const display = document.getElementById('timer-num');
         if (display) display.innerText = format(remaining);
 
-        // Final Alarm (10sn)
         if (remaining <= 10000 && remaining > 0 && !audioPlayedFinal) {
-            console.log("%c[Ciko-Engine] ⚠️ SON 10 SANİYE!", "color: #ff003c; font-weight: bold;");
             if (!isMutedGlobal) {
                 const s = SOUND_LIBRARY[Math.floor(Math.random() * SOUND_LIBRARY.length)];
                 currentAudio.src = s.url;
-                currentAudio.play().catch(e => console.warn("Ses engellendi: " + e));
+                currentAudio.play().catch(() => {});
                 document.getElementById('stop-sound-ani').style.display = 'block';
             }
             audioPlayedFinal = true;
@@ -219,17 +214,13 @@ function runTimerEngine() {
             clearInterval(timerInterval);
             if (display) display.innerText = "DONE";
             document.getElementById('cyber-timer-wrapper').classList.remove('critical');
-            console.log("[Ciko-Engine] Süre doldu.");
         }
     }, 1000);
 }
 
-// --- OTOMATİK BEKÇİ (GUARD) ---
-// Bu kısım React'ın geç yüklenmesine karşı saniyede bir UI basmayı dener.
+// Otomatik Başlatıcı
 setInterval(() => {
     if (localStorage.getItem('ciko_timer_end')) {
         buildUI();
     }
-}, 1000);
-
-console.log("%c[Ciko-Core] Başlatıcılar kuruldu. Sistem Sniper modunda.", "color: #00ff41; font-weight: bold;");
+}, 2000);
