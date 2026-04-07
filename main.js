@@ -1,26 +1,31 @@
-// GitHub'daki main.js
+// GitHub -> main.js
 (async function() {
     const BASE_URL = "https://raw.githubusercontent.com/kaankapsiz-eng/AiAgentReviewTimer/feat/AiAgentReviewTimer/init/";
     const files = ["assets.js", "core.js"];
 
-    console.log("%c[Ciko-Main] Parçalar getiriliyor...", "color: #fff000;");
+    console.log("%c[Ciko-Main] 🛠️ Hibrit motor başlatılıyor...", "color: #fff000; font-weight: bold;");
 
-    for (const file of files) {
-        try {
+    try {
+        let megaCode = "";
+
+        for (const file of files) {
+            // Cache'i delmek için her seferinde farklı URL (?t=...)
             const response = await fetch(BASE_URL + file + "?t=" + Date.now());
-            if (!response.ok) throw new Error(`${file} yüklenemedi!`);
+            if (!response.ok) throw new Error(`${file} indirilemedi!`);
             
             const code = await response.text();
-            
-            // Kodları enjekte et
-            const script = document.createElement('script');
-            script.textContent = code;
-            document.head.appendChild(script);
-            
-            console.log(`%c[Ciko-Main] ✅ ${file} sisteme dahil edildi.`, "color: #00ff41;");
-        } catch (err) {
-            console.error("[Ciko-Main] Hata:", err);
+            megaCode += `\n/* --- Start of ${file} --- */\n` + code + `\n/* --- End of ${file} --- */\n`;
+            console.log(`%c[Ciko-Main] 📦 ${file} paketlendi.`, "color: #00ff41;");
         }
+
+        // Bütün kodu tek seferde enjekte et
+        const script = document.createElement('script');
+        script.textContent = megaCode;
+        document.head.appendChild(script);
+        
+        console.log("%c[Ciko-Main] 🚀 TÜM SİSTEM ATEŞLENDİ!", "color: #00ff41; font-weight: bold; text-shadow: 0 0 10px #00ff41;");
+
+    } catch (err) {
+        console.error("[Ciko-Main] ❌ Kritik hata:", err);
     }
-    console.log("%c[Ciko-Main] Tüm sistem online!", "color: #00ff41; font-weight: bold; text-shadow: 0 0 10px #00ff41;");
 })();
