@@ -1,7 +1,7 @@
-// main.js
-
+// GitHub'daki main.js içeriği
 (async function() {
-    const GITHUB_BASE = "https://raw.githubusercontent.com/kaankapsiz-eng/AiAgentReviewTimer/main/";
+    // BURADAKİ LİNK DE BRANCH'E GÖRE GÜNCELLENDİ:
+    const GITHUB_BASE = "https://raw.githubusercontent.com/kaankapsiz-eng/AiAgentReviewTimer/feat/AiAgentReviewTimer/init/";
     const files = ["assets.js", "core.js"];
 
     for (const file of files) {
@@ -11,6 +11,5 @@
         script.textContent = code;
         document.head.appendChild(script);
     }
-    
-    console.log("%c[Main] Bütün parçalar birleşti, sistem aktif.", "color: #00ff41; font-weight: bold;");
+    console.log("%c[Main] Bütün parçalar birleşti.", "color: #00ff41; font-weight: bold;");
 })();
