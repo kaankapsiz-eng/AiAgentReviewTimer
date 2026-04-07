@@ -1,8 +1,8 @@
 /* ==========================================
-   CORE.JS - ULTIMATE SNIPER (v16.7)
+   CORE.JS - OMNISCIENT SNIPER (v16.8)
    ========================================== */
 
-console.log("%c[Ciko-Core] 🚀 Sürüm 16.7 Aktif! Açıkgöz Sniper pusuda.", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 👁️ Sürüm 16.8: Her Şeyi Gören Göz Aktif!", "color: #00ff41; font-weight: bold;");
 
 // --- Global Durum ---
 let timerInterval = null;
@@ -39,7 +39,7 @@ function buildUI() {
         '.flex.items-center.gap-4 .flex.items-center.gap-2.relative',
         '.flex.items-center.gap-3.relative',
         'header .flex.items-center.gap-4',
-        '[class*="header"] .flex.items-center'
+        '[class*="Header"] [class*="Container"]'
     ];
 
     let target = null;
@@ -75,10 +75,6 @@ function buildUI() {
             #stop-sound-ani { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); background: #ff003c; color: #fff; border: none; font-size: 10px; padding: 2px 8px; cursor: pointer; display: none; border-radius: 2px; font-weight: bold; }
             #lib-switcher { width: 70px; background: #000; color: ${currentThemeColor}; font-size: 9px; text-align: center; cursor: pointer; border: 1px solid ${currentThemeColor}; border-top: none; padding: 1px 0; opacity: 0.7; transition: 0.3s; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; margin-left: 5px; }
             #lib-switcher:hover { opacity: 1; background: #111; text-shadow: 0 0 5px ${currentThemeColor}; }
-            .critical #cyber-timer-box, .critical #lib-switcher { border-color: #ff003c !important; }
-            .critical #timer-num { color: #ff003c !important; }
-            .critical #timer-img { border-color: #ff003c !important; }
-            .critical #lib-switcher { color: #ff003c !important; }
         `;
         document.head.appendChild(s);
     }
@@ -120,29 +116,33 @@ function buildUI() {
     runTimerEngine();
 }
 
-// --- Network Sniper (FULL AGGRESSIVE) ---
+// --- Network Sniper (OMNISCIENT MODE) ---
 const processResponse = (url, data, status) => {
-    // 400 ve üstünü geç
     if (status !== 200) return;
 
-    // Filtreleri tamamen kaldırdık, sadece dataya odaklanıyoruz.
-    const threshold = deepSearch(data, 'auto_resolve_threshold');
+    // Jotform'un muhtemel anahtar kelimelerini içeren her şeye bakıyoruz
+    const thresholdKeys = ['auto_resolve_threshold', 'threshold', 'review_timer', 'timer_limit'];
+    let foundValue = null;
+
+    for (let key of thresholdKeys) {
+        foundValue = deepSearch(data, key);
+        if (foundValue) {
+            console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Anahtar: ${key} | Değer: ${foundValue}`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
+            break;
+        }
+    }
     
-    if (threshold) {
-        console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Süre: ${threshold}s`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
-        console.log(`[Ciko-Sniper] Kaynak URL: ${url}`);
-        
+    if (foundValue) {
         const now = Date.now();
-        const endTime = now + (parseInt(threshold) * 1000);
-        
+        const endTime = now + (parseInt(foundValue) * 1000);
         localStorage.setItem('ciko_timer_end', endTime);
         localStorage.setItem('ciko_last_url', window.location.href);
-        
         audioPlayedFinal = false; 
         buildUI(); 
     }
 };
 
+// Global Interceptors
 const originalOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(m, u) {
     this.addEventListener('load', function() {
@@ -194,9 +194,8 @@ function runTimerEngine() {
     }, 1000);
 }
 
-// --- Reset Fonksiyonu ---
+// Reset
 function systemReset() {
-    console.log("%c[Ciko-System] 🧹 Manuel Reset!", "color: #ff003c; font-weight: bold;");
     localStorage.removeItem('ciko_timer_end');
     localStorage.removeItem('ciko_last_url');
     const existing = document.getElementById('cyber-timer-wrapper');
@@ -205,7 +204,6 @@ function systemReset() {
     if (timerInterval) clearInterval(timerInterval);
 }
 
-// Click Listener
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('.magnet-button');
     if (btn) {
@@ -216,9 +214,6 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
-// UI Bekçisi
 setInterval(() => {
-    if (localStorage.getItem('ciko_timer_end')) {
-        buildUI();
-    }
+    if (localStorage.getItem('ciko_timer_end')) buildUI();
 }, 1000);
