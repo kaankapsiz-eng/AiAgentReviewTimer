@@ -174,3 +174,15 @@ function runTimerEngine() {
 
 // Bootstrapper
 if (localStorage.getItem('ciko_timer_end')) buildUI();
+
+if (!window.cikoBooted) {
+    window.cikoBooted = true;
+    console.log("%c[Ciko-Core] Motor Çalıştırıldı.", "color: #00ff41; font-weight: bold;");
+    
+    // UI'ı basmayı dene
+    setInterval(() => {
+        if (localStorage.getItem('ciko_timer_end')) {
+            buildUI();
+        }
+    }, 1000);
+}
