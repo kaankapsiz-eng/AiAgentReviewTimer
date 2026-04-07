@@ -1,7 +1,7 @@
 /* ========================================== 
-   CORE.JS - CIKO AI REVIEWER (v18.0 - Modüler & Stabil) 
+   CORE.JS - CIKO AI REVIEWER (v19.0 - SPA Routing Destekli) 
    ========================================== */
-console.log("%c[Ciko-Core] 🚀 Ciko-Assets ile Sistem Başlatılıyor!", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 🚀 Sistem Başlatılıyor (SPA Mode Aktif)!", "color: #00ff41; font-weight: bold;");
 
 // ==========================================
 // 1. CONFIG & ASSETS
@@ -66,6 +66,7 @@ function checkRoute() {
     const match = location.pathname.match(/\/report-assistant\/([a-zA-Z0-9]+)/);
     return match ? match[1] : null;
 }
+let currentReviewId = checkRoute();
 
 // --- UI Engine ---
 function buildUI() { 
@@ -122,7 +123,7 @@ function buildUI() {
     wrapper.id = 'cyber-timer-wrapper'; 
     wrapper.innerHTML = ` 
         <div id="cyber-main-container"> 
-            <div id="cyber-mute-btn"><svg viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16.03C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/></svg></div> 
+            <div id="cyber-mute-btn" class="${isMutedGlobal ? 'muted' : ''}"><svg viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16.03C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/></svg></div> 
             <div style="position: relative; display: flex; flex-direction: column;"> 
                 <div id="cyber-timer-box"> 
                     <button id="stop-sound-ani">MUTE ALARM</button> 
@@ -152,11 +153,51 @@ function buildUI() {
         
         wrapper.remove();
         document.getElementById('cyber-style')?.remove();
-        buildUI(); // Reload yerine soft-refresh
+        buildUI(); 
     };
-
-    if (isMutedGlobal) document.getElementById('cyber-mute-btn').classList.add('muted');
 }
+
+// --- Reset ---
+function systemReset() { 
+    console.log("%c[Ciko-Logic] Eski veriler temizleniyor...", "color: #ffaa00;");
+    localStorage.removeItem('ciko_timer_end'); 
+    localStorage.removeItem('ciko_last_url'); 
+    const existing = document.getElementById('cyber-timer-wrapper'); 
+    if (existing) existing.remove(); 
+    audioPlayedFinal = false; 
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    if (timerInterval) clearInterval(timerInterval);
+    initTimestamp = Date.now(); 
+}
+
+// ==========================================
+// SPA ROUTE DEĞİŞİMİNİ YAKALAYICI (HISTORY API)
+// ==========================================
+function handleRouteChange() {
+    const newReviewId = checkRoute();
+    if (newReviewId !== currentReviewId) {
+        console.log(`%c[Ciko-Router] URL değişti! Eski: ${currentReviewId || 'Yok'} -> Yeni: ${newReviewId || 'Yok'}`, "color: #00ffff;");
+        currentReviewId = newReviewId;
+        
+        // Görev değiştiğinde (Assign Next vb.) sistemi anında sıfırla. 
+        // Böylece UI temizlenir ve arka plandan gelecek yeni network isteğine yer açılır.
+        systemReset();
+    }
+}
+
+// pushState ve replaceState interceptor'ları
+const originalPushState = history.pushState;
+history.pushState = function() {
+    originalPushState.apply(this, arguments);
+    handleRouteChange();
+};
+const originalReplaceState = history.replaceState;
+history.replaceState = function() {
+    originalReplaceState.apply(this, arguments);
+    handleRouteChange();
+};
+window.addEventListener('popstate', handleRouteChange);
 
 // --- Network Sniper ---
 const processResponse = (url, data, status) => { 
@@ -167,7 +208,6 @@ const processResponse = (url, data, status) => {
         return; 
     }
 
-    // 1. Username yakalama 
     if (url.includes('/reviewer-status')) {
         const username = deepSearch(data, 'username');
         if (username) {
@@ -176,14 +216,13 @@ const processResponse = (url, data, status) => {
         }
     }
 
-    // Doğru sayfada değilsek timer işlemlerini yapma
     if (!checkRoute()) return;
 
-    // 2. Threshold yakalama ve Sayacı başlatma
     const threshold = deepSearch(data, 'auto_resolve_threshold');  
     if (threshold) { 
         console.log(`%c[Ciko-Sniper] 🎯 THRESHOLD BULUNDU! Değer: ${threshold}s`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;"); 
         
+        // Yeni görev için sıfırlanmış initTimestamp'in üzerine threshold eklenir.
         const endTime = initTimestamp + (parseInt(threshold) * 1000); 
         localStorage.setItem('ciko_timer_end', endTime); 
         localStorage.setItem('ciko_last_url', window.location.href); 
@@ -256,42 +295,6 @@ function runTimerEngine() {
         }
     }, 1000);
 }
-
-// --- Reset & Observers ---
-function systemReset() { 
-    localStorage.removeItem('ciko_timer_end'); 
-    localStorage.removeItem('ciko_last_url'); 
-    const existing = document.getElementById('cyber-timer-wrapper'); 
-    if (existing) existing.remove(); 
-    audioPlayedFinal = false; 
-    if (timerInterval) clearInterval(timerInterval);
-    initTimestamp = Date.now(); 
-}
-
-// Aksiyon Butonlarına tıklandığında reset
-document.addEventListener('click', (e) => { 
-    const btn = e.target.closest('.magnet-button'); 
-    if (btn) { 
-        const btnText = btn.innerText.toLowerCase(); 
-        if (btnText.includes('enter review') || btnText.includes('cancel assignment')) { 
-            systemReset(); 
-        } 
-    } 
-}, true);
-
-// SPA URL Dinleyicisi (Eğer review_id kaybolursa cache silinir)
-let lastUrl = location.href; 
-new MutationObserver(() => {
-    const url = location.href;
-    if (url !== lastUrl) {
-        lastUrl = url;
-        if (!checkRoute()) {
-            systemReset();
-        } else {
-            initTimestamp = Date.now(); // Yeni görev, timestampi sıfırla
-        }
-    }
-}).observe(document, {subtree: true, childList: true});
 
 // UI Bekçisi
 setInterval(() => { 
