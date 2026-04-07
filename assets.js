@@ -1,17 +1,13 @@
-/* ASSETS.JS 
-   Görsel ve Ses Kütüphanesi
-*/
-
 const COLOR_OBIWAN = '#c19a6b';
 const COLOR_PAPOI = '#fff000';
 const PODO_IMG = 'https://cdn.jotfor.ms/assets/img/ai-agent/podoAvatars/podo-with-yarn.png';
 
 const IMAGE_LIBRARY = [
-    { url: 'https://gcdnb.pbrd.co/images/SVPsrA9niTqT.jpg?o=1', color: '#00ff41' }, // Tavşan
-    { url: 'https://gcdnb.pbrd.co/images/aeXkVuv0CcQQ.png?o=1', color: '#ff003c' },   // Kırmızı Özel
-    { url: PODO_IMG, color: '#007bff' },                                            // Podo
+    { url: 'https://gcdnb.pbrd.co/images/SVPsrA9niTqT.jpg?o=1', color: '#00ff41' },
+    { url: 'https://gcdnb.pbrd.co/images/aeXkVuv0CcQQ.png?o=1', color: '#ff003c' },
+    { url: PODO_IMG, color: '#007bff' },
     { url: 'https://i0.wp.com/day2daygallery.fr/wp-content/uploads/2024/04/PortraitofObiwan.jpeg?fit=981%2C981&ssl=1', color: COLOR_OBIWAN },
-    { url: 'https://gcdnb.pbrd.co/images/kFjPbqAGh6z7.png?o=1', color: COLOR_PAPOI }
+    { url: 'https://gcdnb.pbrd.co/images/kFjPbqAGh6z7.png?o=1', color: COLOR_PAPOI } 
 ];
 
 const SOUND_LIBRARY = [

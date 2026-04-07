@@ -1,7 +1,3 @@
-/* CORE.JS 
-   Sniper (Logic), UI (Helper) ve Zaman Motoru
-*/
-
 let currentUrl = window.location.href;
 let timerInterval = null;
 let isMutedGlobal = localStorage.getItem('cyberTimerMuted') === 'true';
@@ -11,7 +7,6 @@ let audioPlayedFinal = false;
 let currentAudio = new Audio();
 currentAudio.volume = 0.2;
 
-// --- HELPERS ---
 function deepSearch(obj, key) {
     if (obj && typeof obj === 'object') {
         if (obj.hasOwnProperty(key)) return obj[key];
@@ -31,7 +26,6 @@ function format(ms) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// --- UI ENGINE ---
 function buildUI() {
     if (document.getElementById('cyber-timer-wrapper')) return;
     const target = document.querySelector('.flex.items-center.gap-4 .flex.items-center.gap-2.relative');
@@ -101,7 +95,6 @@ function buildUI() {
     runTimerEngine();
 }
 
-// --- LOGIC & NETWORK ---
 const processResponse = (url, data, status) => {
     if (status !== 200 || localStorage.getItem('ciko_timer_end')) return;
     const foundUser = deepSearch(data, 'username');
@@ -118,7 +111,6 @@ const processResponse = (url, data, status) => {
     }
 };
 
-// --- SNIPER (INTERCEPTORS) ---
 const originalOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(m, u) {
     this.addEventListener('load', function() {
@@ -135,7 +127,6 @@ window.fetch = async (...args) => {
     return response;
 };
 
-// --- TIMER ENGINE ---
 function runTimerEngine() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
@@ -174,15 +165,3 @@ function runTimerEngine() {
 
 // Bootstrapper
 if (localStorage.getItem('ciko_timer_end')) buildUI();
-
-if (!window.cikoBooted) {
-    window.cikoBooted = true;
-    console.log("%c[Ciko-Core] Motor Çalıştırıldı.", "color: #00ff41; font-weight: bold;");
-    
-    // UI'ı basmayı dene
-    setInterval(() => {
-        if (localStorage.getItem('ciko_timer_end')) {
-            buildUI();
-        }
-    }, 1000);
-}
