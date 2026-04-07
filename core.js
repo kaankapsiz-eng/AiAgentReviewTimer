@@ -1,8 +1,8 @@
 /* ==========================================
-   CORE.JS - STABILIZED UI EDITION (v16.9)
+   CORE.JS - FINAL STABILITY (v17.0)
    ========================================== */
 
-console.log("%c[Ciko-Core] 🚀 Sürüm 16.9 Aktif! Stabilite modu devrede.", "color: #00ff41; font-weight: bold;");
+console.log("%c[Ciko-Core] 🚀 Sürüm 17.0: Mühürlü ve Stabil!", "color: #00ff41; font-weight: bold;");
 
 // --- Global Durum ---
 let timerInterval = null;
@@ -33,9 +33,9 @@ function format(ms) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// --- UI Engine (MODİFİYE EDİLDİ) ---
+// --- UI Engine ---
 function buildUI() {
-    // 1. Zaten varsa çık! (Resimlerin değişmesini ve sıfırlanmayı engeller)
+    // KRİTİK: Eğer sayaç zaten ekrandaysa, ASLA dokunma!
     if (document.getElementById('cyber-timer-wrapper')) {
         return; 
     }
@@ -44,8 +44,7 @@ function buildUI() {
         '.flex.items-center.gap-4 .flex.items-center.gap-2.relative',
         '.flex.items-center.gap-3.relative',
         'header .flex.items-center.gap-4',
-        '[class*="Header"] [class*="Container"]',
-        '.flex.items-center.gap-2.relative'
+        '[class*="Header"] [class*="Container"]'
     ];
 
     let target = null;
@@ -56,7 +55,7 @@ function buildUI() {
 
     if (!target) return;
 
-    console.log("%c[Ciko-UI] ✅ Target bulundu, inşa ediliyor...", "color: #00ff41;");
+    console.log("%c[Ciko-UI] 🏗️ Sayaç ilk kez kuruluyor...", "color: #00ff41;");
 
     let selected = (userLibraryPref === 'PODO') 
         ? { url: PODO_IMG, color: '#007bff' } 
@@ -64,7 +63,6 @@ function buildUI() {
     
     currentThemeColor = selected.color;
 
-    // Style
     if (!document.getElementById('cyber-style')) {
         const s = document.createElement('style');
         s.id = 'cyber-style';
@@ -107,7 +105,6 @@ function buildUI() {
     
     target.parentNode.insertBefore(wrapper, target);
 
-    // Click Events
     document.getElementById('cyber-mute-btn').onclick = () => {
         isMutedGlobal = !isMutedGlobal;
         localStorage.setItem('cyberTimerMuted', isMutedGlobal);
@@ -124,24 +121,24 @@ function buildUI() {
     };
 
     if (isMutedGlobal) document.getElementById('cyber-mute-btn').classList.add('muted');
-    
-    // Motoru başlat
-    runTimerEngine();
 }
 
 // --- Network Sniper ---
 const processResponse = (url, data, status) => {
     if (status !== 200) return;
-    const foundValue = deepSearch(data, 'auto_resolve_threshold');
+    const threshold = deepSearch(data, 'auto_resolve_threshold');
     
-    if (foundValue) {
-        console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Değer: ${foundValue}`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
+    if (threshold) {
+        console.log(`%c[Ciko-Sniper] 🎯 HEDEF BULUNDU! Değer: ${threshold}s`, "background: #00ff41; color: #000; font-weight: bold; padding: 4px;");
         const now = Date.now();
-        const endTime = now + (parseInt(foundValue) * 1000);
+        const endTime = now + (parseInt(threshold) * 1000);
         localStorage.setItem('ciko_timer_end', endTime);
         localStorage.setItem('ciko_last_url', window.location.href);
         audioPlayedFinal = false; 
-        buildUI(); 
+        
+        // Veri geldiğinde motoru ve UI'yı tetikle
+        buildUI();
+        runTimerEngine(); 
     }
 };
 
@@ -167,15 +164,17 @@ window.fetch = async (...args) => {
 
 // --- Timer Engine ---
 function runTimerEngine() {
-    if (timerInterval) clearInterval(timerInterval);
+    if (timerInterval) clearInterval(timerInterval); // Eski motoru durdur
     timerInterval = setInterval(() => {
         const endTime = localStorage.getItem('ciko_timer_end');
-        if (!endTime) return;
+        if (!endTime) {
+            clearInterval(timerInterval);
+            return;
+        }
 
         const remaining = endTime - Date.now();
         const display = document.getElementById('timer-num');
         
-        // Sadece rakamı güncelle, DOM'u değil!
         if (display) {
             display.innerText = format(remaining);
         }
@@ -197,14 +196,13 @@ function runTimerEngine() {
             if (display) display.innerText = "DONE";
             const wrapper = document.getElementById('cyber-timer-wrapper');
             if (wrapper) wrapper.classList.remove('critical');
-            // Done olunca interval'ı temizlemiyoruz ki yeni veri gelirse tekrar başlasın
+            clearInterval(timerInterval);
         }
     }, 1000);
 }
 
 // Reset
 function systemReset() {
-    console.log("%c[Ciko-System] 🧹 Reset atılıyor...", "color: #ff003c;");
     localStorage.removeItem('ciko_timer_end');
     localStorage.removeItem('ciko_last_url');
     const existing = document.getElementById('cyber-timer-wrapper');
@@ -223,9 +221,18 @@ document.addEventListener('click', (e) => {
     }
 }, true);
 
-// UI Bekçisi - Sadece UI yoksa basar
+// UI Bekçisi: Sadece React sayfayı render edip bizim sayacı silerse geri koyar.
 setInterval(() => {
-    if (localStorage.getItem('ciko_timer_end') && !document.getElementById('cyber-timer-wrapper')) {
+    const hasData = localStorage.getItem('ciko_timer_end');
+    const uiMissing = !document.getElementById('cyber-timer-wrapper');
+    if (hasData && uiMissing) {
         buildUI();
+        runTimerEngine();
     }
-}, 1000);
+}, 2000);
+
+// Sayfa ilk yüklendiğinde hafızada veri varsa çalıştır
+if(localStorage.getItem('ciko_timer_end')) {
+    buildUI();
+    runTimerEngine();
+}
