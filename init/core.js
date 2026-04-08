@@ -142,10 +142,9 @@
     }
 
     function persistSessionStartedAtIfMissing() {
-        // ESKİ: Sadece sayfada olmayı kontrol ediyordu.
-        // YENİ: Hem sayfada olmalı hem de aktif bir review_id bulunmalı.
         const currentId = getCurrentReviewIdFromLocation();
 
+        // Eğer ID yoksa veya doğru sayfada değilsek asla timestamp oluşturma.
         if (!isAiReviewToolPage() || !currentId) {
             return;
         }
@@ -853,13 +852,16 @@
     }
 
     function syncCurrentRouteState() {
-        persistSessionStartedAtIfMissing();
-
         const detectedReviewId = getCurrentReviewIdFromLocation();
+
         if (!detectedReviewId) {
+            // ID yoksa her şeyi temizle ve fonksiyonu bitir.
             initializeReviewContext(null);
             return;
         }
+
+        // ID varsa timestamp kontrolünü burada yapıyoruz.
+        persistSessionStartedAtIfMissing();
 
         if (runtimeState.currentReviewId !== detectedReviewId) {
             logInfo('Yeni review_id tespit edildi.', { detectedReviewId });
@@ -884,29 +886,23 @@
 
         installNetworkInterceptors();
         installRouteWatchers();
+
+        // Direkt persistSession... çağırmıyoruz, syncRoute zaten ID varsa halledecek.
         syncCurrentRouteState();
 
         document.addEventListener('DOMContentLoaded', function () {
-            logInfo('DOMContentLoaded tetiklendi.');
             syncCurrentRouteState();
             ensureUiAndTimerLoop();
         });
 
         window.setInterval(function () {
-            if (!isAiReviewToolPage()) {
-                return;
-            }
+            if (!isAiReviewToolPage()) return;
 
             const liveReviewId = getCurrentReviewIdFromLocation();
             const cachedReviewId = localStorage.getItem(CACHE_KEYS.activeReviewId);
 
             if (liveReviewId !== cachedReviewId) {
                 syncCurrentRouteState();
-                return;
-            }
-
-            if (liveReviewId && !document.getElementById(TIMER_WRAPPER_ID)) {
-                buildUi();
             }
         }, 1000);
     }
