@@ -186,7 +186,7 @@
                 res.clone().text().then(t => {
                     handleResponse(url, parseJSON(t));
                 });
-            } catch {}
+            } catch { }
             return res;
         };
     }
@@ -257,7 +257,7 @@
 
         const s = SOUND_LIBRARY[Math.floor(Math.random() * SOUND_LIBRARY.length)];
         currentAudio = new Audio(s.url);
-        currentAudio.play().catch(()=>{});
+        currentAudio.play().catch(() => { });
     }
 
     // ======================
@@ -266,7 +266,7 @@
 
     function fmt(ms) {
         const s = Math.max(0, Math.floor(ms / 1000));
-        return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+        return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
     }
 
     function startTimer() {
