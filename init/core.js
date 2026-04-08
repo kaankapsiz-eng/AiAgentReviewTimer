@@ -142,7 +142,11 @@
     }
 
     function persistSessionStartedAtIfMissing() {
-        if (!isAiReviewToolPage()) {
+        // ESKİ: Sadece sayfada olmayı kontrol ediyordu.
+        // YENİ: Hem sayfada olmalı hem de aktif bir review_id bulunmalı.
+        const currentId = getCurrentReviewIdFromLocation();
+
+        if (!isAiReviewToolPage() || !currentId) {
             return;
         }
 
@@ -153,7 +157,10 @@
 
         const sessionStartedAt = Date.now();
         localStorage.setItem(CACHE_KEYS.sessionStartedAt, String(sessionStartedAt));
-        logInfo('AI Review Tool açıldı. Session başlangıç timestamp alındı.', { sessionStartedAt });
+        logInfo('AI Review Tool ve aktif Review tespit edildi. Session başlangıç timestamp alındı.', {
+            reviewId: currentId,
+            sessionStartedAt
+        });
     }
 
     function resetSessionStartedAt() {
@@ -812,27 +819,30 @@
         const previouslyCachedReviewId = localStorage.getItem(CACHE_KEYS.activeReviewId);
 
         if (!currentReviewId) {
+            // Eğer URL'de review_id yoksa her şeyi temizle ve bekle.
             if (previouslyCachedReviewId) {
                 clearReviewCache('URL üzerinde review_id kalmadı.');
             } else {
                 stopTimerLoop();
                 removeTimerUi();
-                logInfo('Route kontrol edildi. review_id yok.');
             }
 
+            // Burası kritik: ID yoksa timestamp'i siliyoruz ki yeni review'da sıfırdan başlasın.
             resetSessionStartedAt();
-            persistSessionStartedAtIfMissing();
             return;
         }
 
+        // Eğer yeni bir review'a geçildiyse (ID değiştiyse)
         if (previouslyCachedReviewId && previouslyCachedReviewId !== currentReviewId) {
-            clearReviewCache(`Review değişti. Eski review: ${previouslyCachedReviewId}, yeni review: ${currentReviewId}`);
+            clearReviewCache(`Review değişti. Eski: ${previouslyCachedReviewId}, Yeni: ${currentReviewId}`);
             resetSessionStartedAt();
         }
 
+        // Sadece geçerli bir review_id varken timestamp oluştur.
         if (!getCachedNumber(CACHE_KEYS.sessionStartedAt)) {
-            localStorage.setItem(CACHE_KEYS.sessionStartedAt, String(Date.now()));
-            logInfo('Review route üzerinde session başlangıç timestamp yoktu, şimdi oluşturuldu.');
+            const now = Date.now();
+            localStorage.setItem(CACHE_KEYS.sessionStartedAt, String(now));
+            logInfo('Aktif review için yeni session timestamp oluşturuldu.', { currentReviewId, now });
         }
 
         localStorage.setItem(CACHE_KEYS.activeReviewId, currentReviewId);
